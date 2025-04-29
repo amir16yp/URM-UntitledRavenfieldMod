@@ -12,19 +12,23 @@ namespace URM
     {
         public static Core Instance;
         
-        
-        // Minimap clone settings
-        public bool EnableMinimapClone = true;
-        public float MinimapCloneScale = 0.7f;
-        public bool ShowTerritories = true;
-        
         // Config categories
+        private static MelonPreferences_Category minimapCategory;
+        
+        // Config entries
+        private static MelonPreferences_Entry<bool> enableMinimapCloneEntry;
+        private static MelonPreferences_Entry<float> minimapCloneScaleEntry;
+        
+        // Properties to access config values
+        public bool EnableMinimapClone => enableMinimapCloneEntry.Value;
+        public float MinimapCloneScale => minimapCloneScaleEntry.Value;
         
         public override void OnInitializeMelon()
         {
             Instance = this;
             
             // Register configuration settings
+            RegisterConfig();
             
             // Register TerritoryControl settings
             TerritoryControl.RegisterConfig();
@@ -39,10 +43,26 @@ namespace URM
             LoggerInstance.Msg("URM initalized!");
         }
         
+        private void RegisterConfig()
+        {
+            // Create category for minimap settings
+            minimapCategory = MelonPreferences.CreateCategory("Minimap");
+            
+            // Register minimap settings
+            enableMinimapCloneEntry = minimapCategory.CreateEntry("EnableAlwaysOnMinimap", false, "Enable Always-On Minimap",
+                "Shows a persistent minimap on the screen");
+            minimapCloneScaleEntry = minimapCategory.CreateEntry("MinimapScale", 0.7f, "Minimap Scale",
+                "Scale of the always-on minimap (0.1-1.0)");
+            
+            // Load and save category
+            minimapCategory.LoadFromFile();
+            minimapCategory.SaveToFile();
+        }
+        
         public override void OnUpdate()
         {
             base.OnUpdate();
-            if (AlwaysVisibleMinimap.Instance != null)
+            if (AlwaysVisibleMinimap.Instance != null && EnableMinimapClone)
             {
                 AlwaysVisibleMinimap.Instance.Update();
             }
@@ -61,7 +81,6 @@ namespace URM
                 if (EnableMinimapClone && MinimapCamera.MINIMAP_RENDER_TEXTURE != null)
                 {
                     AlwaysVisibleMinimap.Initialize(MinimapCloneScale);
-                    
                 }
                 
                 LoggerInstance.Msg("Scene initialization complete");
