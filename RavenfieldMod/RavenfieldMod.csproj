@@ -285,4 +285,8 @@
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<Exec Command="COPY &quot;$(TargetPath)&quot; &quot;C:\Program Files (x86)\Steam\steamapps\common\Ravenfield\Mods&quot;" />
 	</Target>
+	
+	<Target Name="RunGame" AfterTargets="PostBuild">
+		<Exec Command="&quot;C:\Program Files (x86)\Steam\steamapps\common\Ravenfield\ravenfield.exe&quot;" />
+	</Target>
 </Project>
