@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RavenfieldMod")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8c76de9e498d2cd23d5ff9f2ced5e971c5a7f4be")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+87c98a2e477b3bac54fd1a165ba772c9122ae92c")]
 [assembly: System.Reflection.AssemblyProductAttribute("RavenfieldMod")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RavenfieldMod")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

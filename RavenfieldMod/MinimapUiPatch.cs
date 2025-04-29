@@ -16,10 +16,10 @@ namespace URM
         private static Material territoryMaterial;
         
         // Render texture for unit visualization
-        private static RenderTexture unitRenderTexture;
+        public static RenderTexture unitRenderTexture;
         
         // Render texture for territory visualization
-        private static RenderTexture territoryRenderTexture;
+        public static RenderTexture territoryRenderTexture;
         
         // Image to display units on the minimap
         private static UnityEngine.UI.RawImage unitOverlayImage;
@@ -122,19 +122,26 @@ namespace URM
             
             // Initialize territory control system
             TerritoryControl.Initialize();
+
+            // Set textures
+            __instance.minimap.texture = MinimapUi.instance.minimap.texture;
+            __instance.playerBlipsRT = MinimapUi.instance.playerBlipsRT;
+            __instance.actorBlipsRTFront = MinimapUi.instance.actorBlipsRTFront;
         }
 
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
         public static void StartPostfix(MinimapUi __instance)
         {
-            // Initialize unit and territory visualization
             InitializeVisualization(__instance);
-            
             // Start update coroutines
             __instance.StartCoroutine(UpdateUnitsCoroutine());
             __instance.StartCoroutine(UpdateTerritoriesCoroutine());
+
         }
+
+            
+        
 
         private static void InitializeVisualization(MinimapUi minimapUi)
         {

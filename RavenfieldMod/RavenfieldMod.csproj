@@ -282,13 +282,14 @@
 		<Compile Include="Core.cs" />
 		<Compile Include="TerritoryControl.cs" />
 		<Compile Include="MinimapUiPatch.cs" />
+		<Compile Include="AlwaysVisibleMinimap.cs" />
 	</ItemGroup>
 	
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<Exec Command="COPY &quot;$(TargetPath)&quot; &quot;C:\Program Files (x86)\Steam\steamapps\common\Ravenfield\Mods&quot;" />
 	</Target>
 	
-	<Target Name="RunGame" AfterTargets="PostBuild">
+	<!-- <Target Name="RunGame" AfterTargets="PostBuild">
 		<Exec Command="&quot;C:\Program Files (x86)\Steam\steamapps\common\Ravenfield\ravenfield.exe&quot;" />
-	</Target>
+	</Target> -->
 </Project>

@@ -56,7 +56,7 @@ namespace URM
             // Register territory settings
             gridResolutionEntry = territoryCategory.CreateEntry("GridResolution", 100, "Map Grid Resolution", 
                 "Higher values provide more detailed territory but may impact performance");
-            expansionRadiusEntry = territoryCategory.CreateEntry("ExpansionRadius", 25f, "Territory Expansion Radius",
+            expansionRadiusEntry = territoryCategory.CreateEntry("ExpansionRadius", 10f, "Territory Expansion Radius",
                 "Controls how far territory expands from controlled points");
             maxPointsPerTeamEntry = territoryCategory.CreateEntry("MaxPointsPerTeam", 200, "Max Territory Points", 
                 "Maximum number of points used to draw territory boundaries");
@@ -64,17 +64,17 @@ namespace URM
                 "Smaller values result in more detailed territory boundaries");
             
             // Register influence settings
-            infantryInfluenceEntry = influenceCategory.CreateEntry("InfantryInfluence", 0.05f, "Infantry Influence", 
+            infantryInfluenceEntry = influenceCategory.CreateEntry("InfantryInfluence", 0.08f, "Infantry Influence", 
                 "How much influence a soldier exerts on the map");
-            vehicleInfluenceEntry = influenceCategory.CreateEntry("VehicleInfluence", 0.07f, "Vehicle Influence",
+            vehicleInfluenceEntry = influenceCategory.CreateEntry("VehicleInfluence", 0.12f, "Vehicle Influence",
                 "How much influence a vehicle exerts on the map");
-            influenceRadiusEntry = influenceCategory.CreateEntry("InfluenceRadius", 0.1f, "Influence Radius",
+            influenceRadiusEntry = influenceCategory.CreateEntry("InfluenceRadius", 0.15f, "Influence Radius",
                 "Radius of influence in map coordinates (0-1)");
-            influenceFalloffEntry = influenceCategory.CreateEntry("InfluenceFalloff", 2.0f, "Influence Falloff",
+            influenceFalloffEntry = influenceCategory.CreateEntry("InfluenceFalloff", 1.5f, "Influence Falloff",
                 "How quickly influence drops with distance");
-            neutralDecayRateEntry = influenceCategory.CreateEntry("NeutralDecayRate", 0.005f, "Neutral Decay Rate",
+            neutralDecayRateEntry = influenceCategory.CreateEntry("NeutralDecayRate", 0.008f, "Neutral Decay Rate",
                 "How quickly unoccupied areas decay to neutral");
-            frontlineThresholdEntry = influenceCategory.CreateEntry("FrontlineThreshold", 0.2f, "Frontline Threshold",
+            frontlineThresholdEntry = influenceCategory.CreateEntry("FrontlineThreshold", 0.15f, "Frontline Threshold",
                 "Threshold for determining frontlines");
             groundUnitsOnlyEntry = influenceCategory.CreateEntry("GroundUnitsOnly", true, "Ground Units Only",
                 "If true, only ground units influence territory");
