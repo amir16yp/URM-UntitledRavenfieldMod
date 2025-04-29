@@ -12,7 +12,7 @@ namespace URM
         
         // Store detailed influence data across the map using a grid
         public static float[,] InfluenceMap;
-        public static int[,] ControlMap; // -1 = neutral, 0 = blue, 1 = red
+        public static float[,] ControlMap; // -1.0 = neutral, 0.0 = blue, 1.0 = red
         
         // Config categories
         private static MelonPreferences_Category territoryCategory;
@@ -28,7 +28,6 @@ namespace URM
         private static MelonPreferences_Entry<float> influenceRadiusEntry;
         private static MelonPreferences_Entry<float> influenceFalloffEntry;
         private static MelonPreferences_Entry<float> neutralDecayRateEntry;
-        private static MelonPreferences_Entry<float> frontlineThresholdEntry;
         private static MelonPreferences_Entry<bool> groundUnitsOnlyEntry;
         
         // Properties to access config values
@@ -41,7 +40,6 @@ namespace URM
         public static float influenceRadius => influenceRadiusEntry.Value;
         public static float influenceFalloff => influenceFalloffEntry.Value;
         public static float neutralDecayRate => neutralDecayRateEntry.Value;
-        public static float frontlineThreshold => frontlineThresholdEntry.Value;
         public static bool groundUnitsOnly => groundUnitsOnlyEntry.Value;
         
         // Register configuration settings
@@ -56,26 +54,24 @@ namespace URM
             // Register territory settings
             gridResolutionEntry = territoryCategory.CreateEntry("GridResolution", 100, "Map Grid Resolution", 
                 "Higher values provide more detailed territory but may impact performance");
-            expansionRadiusEntry = territoryCategory.CreateEntry("ExpansionRadius", 10f, "Territory Expansion Radius",
-                "Controls how far territory expands from controlled points");
+            expansionRadiusEntry = territoryCategory.CreateEntry("ExpansionRadius", 0.05f, "Territory Expansion Radius",
+                "Controls how far territory expands from controlled points (in map coordinates 0-1)");
             maxPointsPerTeamEntry = territoryCategory.CreateEntry("MaxPointsPerTeam", 200, "Max Territory Points", 
                 "Maximum number of points used to draw territory boundaries");
             simplificationDistanceEntry = territoryCategory.CreateEntry("SimplificationDistance", 0.05f, "Simplification Distance",
                 "Smaller values result in more detailed territory boundaries");
             
             // Register influence settings
-            infantryInfluenceEntry = influenceCategory.CreateEntry("InfantryInfluence", 0.08f, "Infantry Influence", 
+            infantryInfluenceEntry = influenceCategory.CreateEntry("InfantryInfluence", 0.12f, "Infantry Influence", 
                 "How much influence a soldier exerts on the map");
-            vehicleInfluenceEntry = influenceCategory.CreateEntry("VehicleInfluence", 0.12f, "Vehicle Influence",
+            vehicleInfluenceEntry = influenceCategory.CreateEntry("VehicleInfluence", 0.18f, "Vehicle Influence",
                 "How much influence a vehicle exerts on the map");
-            influenceRadiusEntry = influenceCategory.CreateEntry("InfluenceRadius", 0.15f, "Influence Radius",
+            influenceRadiusEntry = influenceCategory.CreateEntry("InfluenceRadius", 0.08f, "Influence Radius",
                 "Radius of influence in map coordinates (0-1)");
-            influenceFalloffEntry = influenceCategory.CreateEntry("InfluenceFalloff", 1.5f, "Influence Falloff",
+            influenceFalloffEntry = influenceCategory.CreateEntry("InfluenceFalloff", 1.2f, "Influence Falloff",
                 "How quickly influence drops with distance");
-            neutralDecayRateEntry = influenceCategory.CreateEntry("NeutralDecayRate", 0.008f, "Neutral Decay Rate",
+            neutralDecayRateEntry = influenceCategory.CreateEntry("NeutralDecayRate", 0.01f, "Neutral Decay Rate",
                 "How quickly unoccupied areas decay to neutral");
-            frontlineThresholdEntry = influenceCategory.CreateEntry("FrontlineThreshold", 0.15f, "Frontline Threshold",
-                "Threshold for determining frontlines");
             groundUnitsOnlyEntry = influenceCategory.CreateEntry("GroundUnitsOnly", true, "Ground Units Only",
                 "If true, only ground units influence territory");
 
@@ -102,14 +98,14 @@ namespace URM
             
             // Initialize influence map grid
             InfluenceMap = new float[gridResolution, gridResolution];
-            ControlMap = new int[gridResolution, gridResolution];
+            ControlMap = new float[gridResolution, gridResolution];
             
             // Initialize with neutral control (no initial territory)
             for (int x = 0; x < gridResolution; x++)
             {
                 for (int y = 0; y < gridResolution; y++)
                 {
-                    ControlMap[x, y] = -1;
+                    ControlMap[x, y] = -1.0f;
                     InfluenceMap[x, y] = 0f; // Start with no influence
                 }
             }
@@ -158,12 +154,12 @@ namespace URM
                         InfluenceMap[x, y] += influenceValue * falloff;
                         
                         // Update control map based on influence
-                        if (InfluenceMap[x, y] < -frontlineThreshold)
-                            ControlMap[x, y] = 0; // Blue control
-                        else if (InfluenceMap[x, y] > frontlineThreshold)
-                            ControlMap[x, y] = 1; // Red control
+                        if (InfluenceMap[x, y] < 0)
+                            ControlMap[x, y] = Mathf.Clamp01(-InfluenceMap[x, y]); // Blue control (0 to 1)
+                        else if (InfluenceMap[x, y] > 0)
+                            ControlMap[x, y] = Mathf.Clamp01(InfluenceMap[x, y]); // Red control (0 to 1)
                         else
-                            ControlMap[x, y] = -1; // Contested/neutral
+                            ControlMap[x, y] = -1.0f; // Contested/neutral
                     }
                 }
             }
@@ -183,12 +179,12 @@ namespace URM
                         InfluenceMap[x, y] = Mathf.Min(0, InfluenceMap[x, y] + neutralDecayRate);
                         
                     // Update control if influence crossed thresholds
-                    if (InfluenceMap[x, y] < -frontlineThreshold)
-                        ControlMap[x, y] = 0; // Blue control
-                    else if (InfluenceMap[x, y] > frontlineThreshold)
-                        ControlMap[x, y] = 1; // Red control
+                    if (InfluenceMap[x, y] < 0)
+                        ControlMap[x, y] = Mathf.Clamp01(-InfluenceMap[x, y]); // Blue control (0 to 1)
+                    else if (InfluenceMap[x, y] > 0)
+                        ControlMap[x, y] = Mathf.Clamp01(InfluenceMap[x, y]); // Red control (0 to 1)
                     else
-                        ControlMap[x, y] = -1; // Contested/neutral
+                        ControlMap[x, y] = -1.0f; // Contested/neutral
                 }
             }
         }
@@ -275,54 +271,6 @@ namespace URM
         {
             // Use the influence system instead
             AddInfluence(team, position, false);
-        }
-        
-        // Get frontline points where teams clash
-        public static List<Vector2> GetFrontlinePoints()
-        {
-            List<Vector2> frontlinePoints = new List<Vector2>();
-            
-            for (int x = 0; x < gridResolution; x++)
-            {
-                for (int y = 0; y < gridResolution; y++)
-                {
-                    // Look for contested areas (near zero influence)
-                    if (Mathf.Abs(InfluenceMap[x, y]) <= frontlineThreshold)
-                    {
-                        // Check if there's both blue and red influence nearby
-                        bool hasBlue = false;
-                        bool hasRed = false;
-                        
-                        // Check neighboring cells
-                        for (int dx = -2; dx <= 2; dx++)
-                        {
-                            for (int dy = -2; dy <= 2; dy++)
-                            {
-                                int nx = x + dx;
-                                int ny = y + dy;
-                                
-                                if (nx >= 0 && nx < gridResolution && ny >= 0 && ny < gridResolution)
-                                {
-                                    if (InfluenceMap[nx, ny] < -frontlineThreshold)
-                                        hasBlue = true;
-                                    if (InfluenceMap[nx, ny] > frontlineThreshold)
-                                        hasRed = true;
-                                }
-                            }
-                        }
-                        
-                        // If area has both influences, it's a frontline
-                        if (hasBlue && hasRed)
-                        {
-                            float worldX = (x + 0.5f) / gridResolution;
-                            float worldY = (y + 0.5f) / gridResolution;
-                            frontlinePoints.Add(new Vector2(worldX, worldY));
-                        }
-                    }
-                }
-            }
-            
-            return frontlinePoints;
         }
         
         // Old convex hull method, kept for compatibility

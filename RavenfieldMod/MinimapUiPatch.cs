@@ -66,9 +66,17 @@ namespace URM
             public float GetDisplaySize()
             {
                 if (isVehicle)
-                    return vehicleSize + (Mathf.Min(count - 1, 5) * 0.002f);
+                    return 0.015f + (Mathf.Min(count - 1, 10) * 0.003f); // Larger base size for vehicles
                 else
-                    return unitSize + (Mathf.Min(count - 1, 10) * 0.001f);
+                    return 0.01f + (Mathf.Min(count - 1, 20) * 0.002f); // Smaller base size for infantry
+            }
+            
+            public float GetLineWidth()
+            {
+                if (isVehicle)
+                    return 0.002f + (Mathf.Min(count - 1, 10) * 0.0005f); // Thicker lines for vehicles
+                else
+                    return 0.001f + (Mathf.Min(count - 1, 20) * 0.0003f); // Thinner lines for infantry
             }
         }
         
@@ -161,7 +169,7 @@ namespace URM
             territoryOverlayImage.rectTransform.anchorMax = Vector2.one;
             territoryOverlayImage.rectTransform.offsetMin = Vector2.zero;
             territoryOverlayImage.rectTransform.offsetMax = Vector2.zero;
-
+            
             // Create render texture for units
             unitRenderTexture = new RenderTexture(new RenderTextureDescriptor(resolution, resolution, RenderTextureFormat.ARGB32, 0));
             unitRenderTexture.Create();
@@ -386,8 +394,7 @@ namespace URM
             {
                 for (int y = 0; y < TerritoryControl.gridResolution; y++)
                 {
-                    float influence = TerritoryControl.InfluenceMap[x, y];
-                    int control = TerritoryControl.ControlMap[x, y];
+                    float control = TerritoryControl.ControlMap[x, y];
                     
                     // Calculate cell corners
                     float x0 = (float)x / TerritoryControl.gridResolution;
@@ -395,18 +402,20 @@ namespace URM
                     float x1 = x0 + cellSize;
                     float y1 = y0 + cellSize;
                     
-                    // Set color based on influence
-                    if (influence < 0) // Blue influence
+                    // Set color based on control
+                    if (control >= 0) // Has control
                     {
-                        float strength = Mathf.Clamp01(-influence * 3.0f); // Amplify for visibility
-                        Color blueInfluence = new Color(0.0f, 0.0f, 0.8f, 0.1f + strength * 0.4f);
-                        GL.Color(blueInfluence);
-                    }
-                    else if (influence > 0) // Red influence
-                    {
-                        float strength = Mathf.Clamp01(influence * 3.0f); // Amplify for visibility
-                        Color redInfluence = new Color(0.8f, 0.0f, 0.0f, 0.1f + strength * 0.4f);
-                        GL.Color(redInfluence);
+                        float strength = control; // Use control value directly for alpha
+                        if (TerritoryControl.InfluenceMap[x, y] < 0) // Blue control
+                        {
+                            Color blueInfluence = new Color(0.0f, 0.0f, 0.8f, strength * 0.5f); // Scale alpha by 0.5 for better visibility
+                            GL.Color(blueInfluence);
+                        }
+                        else // Red control
+                        {
+                            Color redInfluence = new Color(0.8f, 0.0f, 0.0f, strength * 0.5f); // Scale alpha by 0.5 for better visibility
+                            GL.Color(redInfluence);
+                        }
                     }
                     else // Neutral
                     {
@@ -460,71 +469,7 @@ namespace URM
                 GL.End();
             }
             
-            // 3. Draw frontline with dashed battle line
-            List<Vector2> frontlinePoints = TerritoryControl.GetFrontlinePoints();
-            
-            if (frontlinePoints.Count > 4)
-            {
-                // Sort frontline points to make a continuous line
-                // (Simple approach - not perfect but good enough for visualization)
-                List<Vector2> sortedFrontline = new List<Vector2>();
-                sortedFrontline.Add(frontlinePoints[0]);
-                frontlinePoints.RemoveAt(0);
-                
-                while (frontlinePoints.Count > 0)
-                {
-                    Vector2 last = sortedFrontline[sortedFrontline.Count - 1];
-                    float closestDist = float.MaxValue;
-                    int closestIndex = -1;
-                    
-                    for (int i = 0; i < frontlinePoints.Count; i++)
-                    {
-                        float dist = Vector2.Distance(last, frontlinePoints[i]);
-                        if (dist < closestDist)
-                        {
-                            closestDist = dist;
-                            closestIndex = i;
-                        }
-                    }
-                    
-                    if (closestIndex != -1)
-                    {
-                        sortedFrontline.Add(frontlinePoints[closestIndex]);
-                        frontlinePoints.RemoveAt(closestIndex);
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                
-                // Draw dashed battle line
-                GL.Begin(GL.LINES);
-
-                // Black frontline with dashes
-                Color battleLineColor = Color.cyan;
-                GL.Color(battleLineColor);
-                
-                bool dash = true;
-                for (int i = 0; i < sortedFrontline.Count - 1; i++)
-                {
-                    // Toggle dash pattern
-                    if (dash)
-                    {
-                        Vector2 current = sortedFrontline[i];
-                        Vector2 next = sortedFrontline[i + 1];
-                        
-                        GL.Vertex3(current.x, current.y, 0);
-                        GL.Vertex3(next.x, next.y, 0);
-                    }
-                    
-                    dash = !dash;
-                }
-                
-                GL.End();
-            }
-            
-            GL.PopMatrix();
+           
         }
         
         private static void DrawUnits(Matrix4x4 minimapMatrix)
@@ -534,8 +479,6 @@ namespace URM
             
             GL.PushMatrix();
             GL.LoadOrtho();
-            
-            GL.Begin(GL.QUADS);
             
             // Create unit groups
             CreateUnitGroups(minimapMatrix);
@@ -549,20 +492,16 @@ namespace URM
                 // Get team color
                 Color teamColor = ColorScheme.TeamColor(team);
                 
-                // Make sure color is visible
-                Color brightColor = new Color(
-                    Mathf.Min(1f, teamColor.r * 1.2f),
-                    Mathf.Min(1f, teamColor.g * 1.2f),
-                    Mathf.Min(1f, teamColor.b * 1.2f),
-                    0.8f
-                );
-                
                 // Draw each group
                 foreach (UnitGroup group in groups)
                 {
                     float size = group.GetDisplaySize();
+                    float lineWidth = group.GetLineWidth();
                     
-                    // Use different appearance for vehicles vs infantry groups
+                    // Draw group as polygon outline
+                    GL.Begin(GL.LINES);
+                    
+                    // Set color based on group type
                     if (group.isVehicle)
                     {
                         // Vehicle group - more solid color
@@ -573,19 +512,34 @@ namespace URM
                     {
                         // Infantry group - adjust brightness based on size
                         float alphaAdjust = Mathf.Min(0.6f + (group.count * 0.03f), 0.9f);
-                        Color groupColor = new Color(brightColor.r, brightColor.g, brightColor.b, alphaAdjust);
+                        Color groupColor = new Color(teamColor.r, teamColor.g, teamColor.b, alphaAdjust);
                         GL.Color(groupColor);
                     }
                     
-                    // Draw group as quad
-                    GL.Vertex3(group.position.x - size, group.position.y - size, 0);
-                    GL.Vertex3(group.position.x + size, group.position.y - size, 0);
-                    GL.Vertex3(group.position.x + size, group.position.y + size, 0);
-                    GL.Vertex3(group.position.x - size, group.position.y - size, 0);
+                    // Draw polygon outline with line width
+                    int segments = 8; // Number of sides in the polygon
+                    for (int i = 0; i < segments; i++)
+                    {
+                        float angle1 = (i * 2 * Mathf.PI) / segments;
+                        float angle2 = ((i + 1) * 2 * Mathf.PI) / segments;
+                        
+                        // Draw line with width
+                        for (float w = -lineWidth/2; w <= lineWidth/2; w += lineWidth/4)
+                        {
+                            float x1 = group.position.x + (size + w) * Mathf.Cos(angle1);
+                            float y1 = group.position.y + (size + w) * Mathf.Sin(angle1);
+                            float x2 = group.position.x + (size + w) * Mathf.Cos(angle2);
+                            float y2 = group.position.y + (size + w) * Mathf.Sin(angle2);
+                            
+                            GL.Vertex3(x1, y1, 0);
+                            GL.Vertex3(x2, y2, 0);
+                        }
+                    }
+                    
+                    GL.End();
                 }
             }
             
-            GL.End();
             GL.PopMatrix();
         }
         
@@ -775,4 +729,4 @@ namespace URM
             );
         }
     }
-}
+}   
