@@ -1,6 +1,8 @@
 using UnityEngine;
+using MelonLoader;
+using System.Collections.Generic;
 
-namespace BasicMinimapMod
+namespace URM
 {
     // Class to track territory control data
     public static class TerritoryControl
@@ -12,28 +14,87 @@ namespace BasicMinimapMod
         public static float[,] InfluenceMap;
         public static int[,] ControlMap; // -1 = neutral, 0 = blue, 1 = red
         
-        // Grid resolution (higher = more detailed but slower)
-        public static int gridResolution = 100;
+        // Config categories
+        private static MelonPreferences_Category territoryCategory;
+        private static MelonPreferences_Category influenceCategory;
         
-        // Settings for territory expansion
-        public static float expansionRadius = 25f;
-        public static int maxPointsPerTeam = 200;
-        public static float simplificationDistance = 0.05f; // Smaller value to get more points
+        // Config entries
+        private static MelonPreferences_Entry<int> gridResolutionEntry;
+        private static MelonPreferences_Entry<float> expansionRadiusEntry;
+        private static MelonPreferences_Entry<int> maxPointsPerTeamEntry;
+        private static MelonPreferences_Entry<float> simplificationDistanceEntry;
+        private static MelonPreferences_Entry<float> infantryInfluenceEntry;
+        private static MelonPreferences_Entry<float> vehicleInfluenceEntry;
+        private static MelonPreferences_Entry<float> influenceRadiusEntry;
+        private static MelonPreferences_Entry<float> influenceFalloffEntry;
+        private static MelonPreferences_Entry<float> neutralDecayRateEntry;
+        private static MelonPreferences_Entry<float> frontlineThresholdEntry;
+        private static MelonPreferences_Entry<bool> groundUnitsOnlyEntry;
         
-        // Control point influence settings
-        public static float infantryInfluence = 0.05f;  // How much influence a soldier exerts
-        public static float vehicleInfluence = 0.07f;   // How much influence a vehicle exerts
-        public static float influenceRadius = 0.1f;     // Radius of influence in map coordinates (0-1)
-        public static float influenceFalloff = 2.0f;    // How quickly influence drops with distance
-        public static float neutralDecayRate = 0.005f;  // How quickly unoccupied areas decay to neutral
-        public static float frontlineThreshold = 0.2f;  // Threshold for determining frontlines
+        // Properties to access config values
+        public static int gridResolution => gridResolutionEntry.Value;
+        public static float expansionRadius => expansionRadiusEntry.Value;
+        public static int maxPointsPerTeam => maxPointsPerTeamEntry.Value;
+        public static float simplificationDistance => simplificationDistanceEntry.Value;
+        public static float infantryInfluence => infantryInfluenceEntry.Value;
+        public static float vehicleInfluence => vehicleInfluenceEntry.Value;
+        public static float influenceRadius => influenceRadiusEntry.Value;
+        public static float influenceFalloff => influenceFalloffEntry.Value;
+        public static float neutralDecayRate => neutralDecayRateEntry.Value;
+        public static float frontlineThreshold => frontlineThresholdEntry.Value;
+        public static bool groundUnitsOnly => groundUnitsOnlyEntry.Value;
         
-        // Flag to track ground-only control
-        public static bool groundUnitsOnly = true;     // Only ground units influence territory
+        // Register configuration settings
+        public static void RegisterConfig()
+        {
+            // Create category for territory settings
+            territoryCategory = MelonPreferences.CreateCategory("TerritoryControl");
+            
+            // Create category for influence settings
+            influenceCategory = MelonPreferences.CreateCategory("Influence");
+            
+            // Register territory settings
+            gridResolutionEntry = territoryCategory.CreateEntry("GridResolution", 100, "Map Grid Resolution", 
+                "Higher values provide more detailed territory but may impact performance");
+            expansionRadiusEntry = territoryCategory.CreateEntry("ExpansionRadius", 25f, "Territory Expansion Radius",
+                "Controls how far territory expands from controlled points");
+            maxPointsPerTeamEntry = territoryCategory.CreateEntry("MaxPointsPerTeam", 200, "Max Territory Points", 
+                "Maximum number of points used to draw territory boundaries");
+            simplificationDistanceEntry = territoryCategory.CreateEntry("SimplificationDistance", 0.05f, "Simplification Distance",
+                "Smaller values result in more detailed territory boundaries");
+            
+            // Register influence settings
+            infantryInfluenceEntry = influenceCategory.CreateEntry("InfantryInfluence", 0.05f, "Infantry Influence", 
+                "How much influence a soldier exerts on the map");
+            vehicleInfluenceEntry = influenceCategory.CreateEntry("VehicleInfluence", 0.07f, "Vehicle Influence",
+                "How much influence a vehicle exerts on the map");
+            influenceRadiusEntry = influenceCategory.CreateEntry("InfluenceRadius", 0.1f, "Influence Radius",
+                "Radius of influence in map coordinates (0-1)");
+            influenceFalloffEntry = influenceCategory.CreateEntry("InfluenceFalloff", 2.0f, "Influence Falloff",
+                "How quickly influence drops with distance");
+            neutralDecayRateEntry = influenceCategory.CreateEntry("NeutralDecayRate", 0.005f, "Neutral Decay Rate",
+                "How quickly unoccupied areas decay to neutral");
+            frontlineThresholdEntry = influenceCategory.CreateEntry("FrontlineThreshold", 0.2f, "Frontline Threshold",
+                "Threshold for determining frontlines");
+            groundUnitsOnlyEntry = influenceCategory.CreateEntry("GroundUnitsOnly", true, "Ground Units Only",
+                "If true, only ground units influence territory");
+
+            // Load and save categories
+            territoryCategory.LoadFromFile();
+            influenceCategory.LoadFromFile();
+            territoryCategory.SaveToFile();
+            influenceCategory.SaveToFile();
+        }
         
         // Initialize territories
         public static void Initialize()
         {
+            // Register configuration if not already done
+            if (territoryCategory == null)
+            {
+                RegisterConfig();
+            }
+            
             TeamTerritories.Clear();
             // Add entries for blue and red teams
             TeamTerritories[0] = new List<Vector2>();

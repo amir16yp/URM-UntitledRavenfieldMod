@@ -1,8 +1,10 @@
 using UnityEngine;
 using HarmonyLib;
 using System.Reflection;
+using System.Collections.Generic;
+using MelonLoader;
 
-namespace BasicMinimapMod
+namespace URM
 {
     [HarmonyPatch(typeof(MinimapUi))]
     public static class MinimapUiPatch
@@ -25,17 +27,30 @@ namespace BasicMinimapMod
         // Image to display territories on the minimap
         private static UnityEngine.UI.RawImage territoryOverlayImage;
         
-        // Configuration values
-        private static float unitUpdateInterval = 0.05f;
-        private static float territoryUpdateInterval = 0.05f;
-        private static float unitSize = 0.008f;
-        private static float vehicleSize = 0.012f;
-        private static float updateTimerDelay = 0.5f;
+        // Config category
+        private static MelonPreferences_Category minimapCategory;
         
-        // Unit grouping settings
-        private static float infantryGroupRadius = 0.03f; // How close infantry must be to be grouped
-        private static int minGroupSize = 3; // Minimum number of units to form a group
-        private static float groupSizeMultiplier = 0.5f; // How much larger groups appear
+        // Config entries
+        private static MelonPreferences_Entry<float> unitUpdateIntervalEntry;
+        private static MelonPreferences_Entry<float> territoryUpdateIntervalEntry;
+        private static MelonPreferences_Entry<float> unitSizeEntry;
+        private static MelonPreferences_Entry<float> vehicleSizeEntry;
+        private static MelonPreferences_Entry<float> updateTimerDelayEntry;
+        private static MelonPreferences_Entry<float> infantryGroupRadiusEntry;
+        private static MelonPreferences_Entry<int> minGroupSizeEntry;
+        private static MelonPreferences_Entry<float> groupSizeMultiplierEntry;
+        private static MelonPreferences_Entry<int> maxUnitsPerTeamEntry;
+        
+        // Properties to access config values
+        private static float unitUpdateInterval => unitUpdateIntervalEntry.Value;
+        private static float territoryUpdateInterval => territoryUpdateIntervalEntry.Value;
+        private static float unitSize => unitSizeEntry.Value;
+        private static float vehicleSize => vehicleSizeEntry.Value;
+        private static float updateTimerDelay => updateTimerDelayEntry.Value;
+        private static float infantryGroupRadius => infantryGroupRadiusEntry.Value;
+        private static int minGroupSize => minGroupSizeEntry.Value;
+        private static float groupSizeMultiplier => groupSizeMultiplierEntry.Value;
+        private static int maxUnitsPerTeam => maxUnitsPerTeamEntry.Value;
         
         // Track unit groups for visualization
         private static Dictionary<int, List<UnitGroup>> teamUnitGroups = new Dictionary<int, List<UnitGroup>>();
@@ -57,13 +72,47 @@ namespace BasicMinimapMod
             }
         }
         
-        // Maximum number of units to draw per team for performance
-        private static int maxUnitsPerTeam = 100;
+        // Register configuration settings
+        public static void RegisterConfig()
+        {
+            // Create category for minimap settings
+            minimapCategory = MelonPreferences.CreateCategory("MinimapUI");
+            
+            // Register minimap settings
+            unitUpdateIntervalEntry = minimapCategory.CreateEntry("UnitUpdateInterval", 0.05f, "Unit Update Interval", 
+                "How frequently unit positions are updated on the minimap");
+            territoryUpdateIntervalEntry = minimapCategory.CreateEntry("TerritoryUpdateInterval", 0.05f, "Territory Update Interval",
+                "How frequently territory is updated on the minimap");
+            unitSizeEntry = minimapCategory.CreateEntry("UnitSize", 0.008f, "Unit Size",
+                "Base size of infantry units on the minimap");
+            vehicleSizeEntry = minimapCategory.CreateEntry("VehicleSize", 0.012f, "Vehicle Size",
+                "Base size of vehicles on the minimap");
+            updateTimerDelayEntry = minimapCategory.CreateEntry("UpdateTimerDelay", 0.5f, "Update Timer Delay",
+                "Initial delay before starting minimap updates");
+            infantryGroupRadiusEntry = minimapCategory.CreateEntry("InfantryGroupRadius", 0.03f, "Infantry Group Radius",
+                "How close infantry must be to be grouped together");
+            minGroupSizeEntry = minimapCategory.CreateEntry("MinGroupSize", 3, "Minimum Group Size",
+                "Minimum number of units to form a group");
+            groupSizeMultiplierEntry = minimapCategory.CreateEntry("GroupSizeMultiplier", 0.5f, "Group Size Multiplier",
+                "How much larger groups appear on the minimap");
+            maxUnitsPerTeamEntry = minimapCategory.CreateEntry("MaxUnitsPerTeam", 100, "Max Units Per Team",
+                "Maximum number of units to draw per team for performance");
+
+            // Load and save category
+            minimapCategory.LoadFromFile();
+            minimapCategory.SaveToFile();
+        }
 
         [HarmonyPatch("Awake")]
         [HarmonyPostfix]
         public static void AwakePostfix(MinimapUi __instance)
         {
+            // Register configuration if not already done
+            if (minimapCategory == null)
+            {
+                RegisterConfig();
+            }
+            
             // Create materials for rendering
             unitMaterial = new Material(Shader.Find("UI/Default"));
             unitMaterial.SetFloat("_UseUIAlphaClip", 1);

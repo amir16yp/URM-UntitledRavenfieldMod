@@ -280,6 +280,8 @@
 
 	<ItemGroup>
 		<Compile Include="Core.cs" />
+		<Compile Include="TerritoryControl.cs" />
+		<Compile Include="MinimapUiPatch.cs" />
 	</ItemGroup>
 	
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
