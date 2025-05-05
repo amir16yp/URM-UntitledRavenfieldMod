@@ -432,8 +432,34 @@ namespace URM
             
             GL.End();
             
-            // 2. Draw team territories with smooth borders
-            foreach (var teamEntry in TerritoryControl.TeamTerritories)
+            // 2. Create separate territory outlines for each team
+            Dictionary<int, List<Vector2>> teamTerritoryPoints = new Dictionary<int, List<Vector2>>();
+            
+            // Collect territory points by team
+            for (int x = 0; x < TerritoryControl.gridResolution; x++)
+            {
+                for (int y = 0; y < TerritoryControl.gridResolution; y++)
+                {
+                    float control = TerritoryControl.ControlMap[x, y];
+                    if (control > 0) // Only consider cells with some control
+                    {
+                        // Determine team based on influence
+                        int team = TerritoryControl.InfluenceMap[x, y] < 0 ? 0 : 1; // 0 for blue, 1 for red
+                        
+                        // Add the corner points to the team's territory
+                        if (!teamTerritoryPoints.ContainsKey(team))
+                            teamTerritoryPoints[team] = new List<Vector2>();
+                            
+                        float x0 = (float)x / TerritoryControl.gridResolution;
+                        float y0 = (float)y / TerritoryControl.gridResolution;
+                        
+                        teamTerritoryPoints[team].Add(new Vector2(x0, y0));
+                    }
+                }
+            }
+            
+            // Draw territory outline for each team separately
+            foreach (var teamEntry in teamTerritoryPoints)
             {
                 int team = teamEntry.Key;
                 List<Vector2> points = teamEntry.Value;
@@ -442,7 +468,7 @@ namespace URM
                 if (points.Count < 3)
                     continue;
                 
-                // Get convex hull for territory polygon
+                // Get convex hull for territory polygon (team-specific)
                 List<Vector2> hullPoints = TerritoryControl.GetConvexHull(points);
                 
                 // Skip if hull creation failed
@@ -469,7 +495,7 @@ namespace URM
                 GL.End();
             }
             
-           
+            GL.PopMatrix();
         }
         
         private static void DrawUnits(Matrix4x4 minimapMatrix)
