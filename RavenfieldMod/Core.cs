@@ -35,6 +35,8 @@ namespace URM
             
             // Register Minimap patch
             MinimapUiPatch.RegisterConfig();
+
+            CapturePointPatch.RegisterConfig();
             
             foreach (MethodBase method in HarmonyInstance.GetPatchedMethods())
             {
@@ -62,10 +64,10 @@ namespace URM
         public override void OnUpdate()
         {
             base.OnUpdate();
-            if (AlwaysVisibleMinimap.Instance != null && EnableMinimapClone)
-            {
-                AlwaysVisibleMinimap.Instance.Update();
-            }
+            // if (AlwaysVisibleMinimap.Instance != null && EnableMinimapClone)
+            // {
+            //     AlwaysVisibleMinimap.Instance.Update();
+            // }
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -78,10 +80,10 @@ namespace URM
                 TerritoryControl.Initialize();
                 
                 // Initialize AlwaysVisibleMinimap when a game scene is loaded
-                if (EnableMinimapClone && MinimapCamera.MINIMAP_RENDER_TEXTURE != null)
-                {
-                    AlwaysVisibleMinimap.Initialize(MinimapCloneScale);
-                }
+                // if (EnableMinimapClone && MinimapCamera.MINIMAP_RENDER_TEXTURE != null)
+                // {
+                //     AlwaysVisibleMinimap.Initialize(MinimapCloneScale);
+                // }
                 
                 LoggerInstance.Msg("Scene initialization complete");
             }

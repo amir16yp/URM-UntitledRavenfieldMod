@@ -280,15 +280,16 @@
 
 	<ItemGroup>
 		<Compile Include="Core.cs" />
+		<Compile Include="CapturePointPatch.cs" />
 		<Compile Include="TerritoryControl.cs" />
 		<Compile Include="MinimapUiPatch.cs" />
-		<Compile Include="AlwaysVisibleMinimap.cs" />
-		<Compile Include="MainMenuPatch.cs" />
+		<!--<Compile Include="MainMenuPatch.cs" />
 		<Compile Include="BF2042BattleInfantryPanelPatch.cs" />
 		<Compile Include="BF2042LoadoutUIPatch.cs" />
 		<Compile Include="BF2042Colors.cs" />
-		<Compile Include="BF2042UIPatch.cs" />
+		<Compile Include="BF2042UIPatch.cs" />\
 		<Compile Include="HealthbarPatch.cs" />
+		-->
 	</ItemGroup>
 	
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
